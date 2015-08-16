@@ -31,9 +31,7 @@ func ExampleFpdf_AddRemoteImage() {
 	pdf.SetFillColor(200, 200, 220)
 	pdf.AddPage()
 
-	pdf.Text(20, 20, "This is text")
-
-	url := "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5d/UPC-A-036000291452.png/220px-UPC-A-036000291452.png"
+	url := "https://github.com/jung-kurt/gofpdf/raw/master/image/logo_gofpdf.jpg?raw=true"
 	httpfpdf.RegisterRemoteImage(pdf, url, "")
 	pdf.Image(url, 100, 100, 20, 20, false, "", 0, "")
 
