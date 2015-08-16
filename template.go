@@ -65,7 +65,7 @@ func (f *Fpdf) UseTemplateScaled(t Template, corner PointType, size SizeType) {
 	}
 	for name, ti := range t.Images() {
 		name = sprintf("t%d-%s", t.ID(), name)
-		f.images[name] = ti
+		f.Images[name] = ti
 	}
 
 	// template data

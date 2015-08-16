@@ -38,7 +38,7 @@ func newTpl(corner PointType, size SizeType, unitStr, fontDirStr string, fn func
 	for _, t := range tpl.Fpdf.templates {
 		templates = append(templates, t)
 	}
-	images := tpl.Fpdf.images
+	images := tpl.Fpdf.Images
 
 	id := GenerateTemplateID()
 	template := FpdfTpl{id, corner, size, bytes, images, templates}

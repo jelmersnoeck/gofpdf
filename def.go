@@ -197,7 +197,7 @@ type Fpdf struct {
 	fontSizePt       float64                   // current font size in points
 	fontSize         float64                   // current font size in user unit
 	ws               float64                   // word spacing
-	images           map[string]*ImageInfoType // array of used images
+	Images           map[string]*ImageInfoType // array of used images
 	pageLinks        [][]linkType              // pageLinks[page][link], both 1-based
 	links            []intLinkType             // array of internal links
 	outlines         []outlineType             // array of outlines

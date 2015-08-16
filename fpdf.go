@@ -74,7 +74,7 @@ func fpdfNew(orientationStr, unitStr, sizeStr, fontDirStr string, size SizeType)
 	f.diffs = make([]string, 0, 8)
 	f.templates = make(map[int64]Template)
 	f.templateObjects = make(map[int64]int)
-	f.images = make(map[string]*ImageInfoType)
+	f.Images = make(map[string]*ImageInfoType)
 	f.pageLinks = make([][]linkType, 0, 8)
 	f.pageLinks = append(f.pageLinks, make([]linkType, 0, 0)) // pageLinks[0] is unused (1-based)
 	f.links = make([]intLinkType, 0, 8)
@@ -2286,7 +2286,7 @@ func (f *Fpdf) RegisterImageReader(imgName, tp string, r io.Reader) (info *Image
 	if f.err != nil {
 		return
 	}
-	info, ok := f.images[imgName]
+	info, ok := f.Images[imgName]
 	if ok {
 		return
 	}
@@ -2313,8 +2313,8 @@ func (f *Fpdf) RegisterImageReader(imgName, tp string, r io.Reader) (info *Image
 	if f.err != nil {
 		return
 	}
-	info.i = len(f.images) + 1
-	f.images[imgName] = info
+	info.i = len(f.Images) + 1
+	f.Images[imgName] = info
 
 	return
 }
@@ -2325,7 +2325,7 @@ func (f *Fpdf) RegisterImageReader(imgName, tp string, r io.Reader) (info *Image
 // necessary if you need information about the image before placing it. See
 // Image() for restrictions on the image and the "tp" parameters.
 func (f *Fpdf) RegisterImage(fileStr, tp string) (info *ImageInfoType) {
-	info, ok := f.images[fileStr]
+	info, ok := f.Images[fileStr]
 	if ok {
 		return
 	}
@@ -3151,7 +3151,7 @@ func (f *Fpdf) loadFontFile(name string) ([]byte, error) {
 }
 
 func (f *Fpdf) putimages() {
-	for _, img := range f.images {
+	for _, img := range f.Images {
 		f.putimage(img)
 	}
 }
@@ -3221,7 +3221,7 @@ func (f *Fpdf) putimage(info *ImageInfoType) {
 }
 
 func (f *Fpdf) putxobjectdict() {
-	for _, image := range f.images {
+	for _, image := range f.Images {
 		// 	foreach($this->images as $image)
 		f.outf("/I%d %d 0 R", image.i, image.n)
 	}
