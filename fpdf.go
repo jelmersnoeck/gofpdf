@@ -1858,6 +1858,100 @@ func (f *Fpdf) CellFormat(w, h float64, txtStr string, borderStr string, ln int,
 	return
 }
 
+func (f *Fpdf) TextBox(w, h float64, strText, borderStr, alignStr string) {
+	var s fmtBuffer
+	f.SetBorder(w, h, borderStr, &s)
+
+	maxLines := int(math.Floor(h / f.fontSize))
+	lines := f.SplitLines([]byte(strText), w)
+
+	for lineIndex, lineBytes := range lines {
+		if lineIndex >= maxLines {
+			break
+		}
+
+		line := string(lineBytes[:])
+
+		var strBuffer fmtBuffer
+
+		var dx, dy float64
+		// Horizontal alignment
+		if strings.Index(alignStr, "R") != -1 {
+			dx = w - f.cMargin - f.GetStringWidth(line)
+		} else if strings.Index(alignStr, "C") != -1 {
+			dx = (w - f.GetStringWidth(line)) / 2
+		} else {
+			dx = f.cMargin
+		}
+		// Vertical alignment
+		if strings.Index(alignStr, "T") != -1 {
+			dy = (f.fontSize - h) / 2.0
+		} else if strings.Index(alignStr, "B") != -1 {
+			dy = (h - f.fontSize) / 2.0
+		} else if strings.Index(alignStr, "A") != -1 {
+			var descent float64
+			d := f.currentFont.Desc
+			if d.Descent == 0 {
+				// not defined (standard font?), use average of 19%
+				descent = -0.19 * f.fontSize
+			} else {
+				descent = float64(d.Descent) * f.fontSize / float64(d.Ascent-d.Descent)
+			}
+			dy = (h-f.fontSize)/2.0 - descent
+		} else if strings.Index(alignStr, "M") != -1 {
+			alignLines := len(lines)
+			if alignLines > maxLines {
+				alignLines = maxLines
+			}
+
+			dy = (h-float64(alignLines)*f.fontSize)/2 - 1
+		} else {
+			dy = 0
+		}
+		if f.colorFlag {
+			strBuffer.printf("q %s ", f.color.text.str)
+		}
+
+		lineX := (f.x + dx) * f.k
+		lineY := (f.h - (f.y + dy + f.fontSize) - (float64(lineIndex) * f.fontSize)) * f.k
+		strBuffer.printf("BT %.2f %.2f Td (%s) Tj ET", lineX, lineY, line)
+
+		f.out(strBuffer.String())
+	}
+
+	str := s.String()
+	if len(str) > 0 {
+		f.out(str)
+	}
+}
+
+func (f *Fpdf) SetBorder(w, h float64, borderStr string, s *fmtBuffer) {
+	op := "S"
+	/// dbg("(CellFormat) f.x %.2f f.k %.2f", f.x, f.k)
+	s.printf("%.2f %.2f %.2f %.2f re %s ", f.x*f.k, (f.h-f.y)*f.k, w*f.k, -h*f.k, op)
+	if len(borderStr) > 0 && borderStr != "1" {
+		// fmt.Printf("border is '%s', no fill\n", borderStr)
+		x := f.x
+		y := f.y
+		left := x * f.k
+		top := (f.h - y) * f.k
+		right := (x + w) * f.k
+		bottom := (f.h - (y + h)) * f.k
+		if strings.Contains(borderStr, "L") {
+			s.printf("%.2f %.2f m %.2f %.2f l S ", left, top, left, bottom)
+		}
+		if strings.Contains(borderStr, "T") {
+			s.printf("%.2f %.2f m %.2f %.2f l S ", left, top, right, top)
+		}
+		if strings.Contains(borderStr, "R") {
+			s.printf("%.2f %.2f m %.2f %.2f l S ", right, top, right, bottom)
+		}
+		if strings.Contains(borderStr, "B") {
+			s.printf("%.2f %.2f m %.2f %.2f l S ", left, bottom, right, bottom)
+		}
+	}
+}
+
 // Cell is a simpler version of CellFormat with no fill, border, links or
 // special alignment.
 func (f *Fpdf) Cell(w, h float64, txtStr string) {
