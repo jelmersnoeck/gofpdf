@@ -187,6 +187,7 @@ type Fpdf struct {
 	fontpath         string                    // path containing fonts
 	fontLoader       FontLoader                // used to load font files from arbitrary locations
 	coreFonts        map[string]bool           // array of core font names
+	clock            Clock                     // Clock instance
 	fonts            map[string]fontDefType    // array of used fonts
 	fontFiles        map[string]fontFileType   // array of font files
 	diffs            []string                  // array of encoding differences

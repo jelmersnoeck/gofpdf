@@ -38,7 +38,6 @@ import (
 	"path"
 	"strconv"
 	"strings"
-	"time"
 )
 
 type fmtBuffer struct {
@@ -76,6 +75,7 @@ func fpdfNew(orientationStr, unitStr, sizeStr, fontDirStr string, size SizeType)
 	f.templateObjects = make(map[int64]int)
 	f.images = make(map[string]*ImageInfoType)
 	f.pageLinks = make([][]linkType, 0, 8)
+	f.clock = &RealClock{}
 	f.pageLinks = append(f.pageLinks, make([]linkType, 0, 0)) // pageLinks[0] is unused (1-based)
 	f.links = make([]intLinkType, 0, 8)
 	f.links = append(f.links, intLinkType{}) // links[0] is unused (1-based)
@@ -3416,7 +3416,11 @@ func (f *Fpdf) putinfo() {
 	if len(f.creator) > 0 {
 		f.outf("/Creator %s", f.textstring(f.creator))
 	}
-	f.outf("/CreationDate %s", f.textstring("D:"+time.Now().Format("20060102150405")))
+	f.outf("/CreationDate %s", f.textstring("D:"+f.clock.Now().Format("20060102150405")))
+}
+
+func (f *Fpdf) Clock() Clock {
+	return f.clock
 }
 
 func (f *Fpdf) putcatalog() {
