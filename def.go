@@ -216,6 +216,7 @@ type Fpdf struct {
 	author           string                    // author
 	keywords         string                    // keywords
 	creator          string                    // creator
+	clock            Clock                     // Clock implementation for times
 	aliasNbPagesStr  string                    // alias for total number of pages
 	pdfVersion       string                    // PDF version number
 	fontDirStr       string                    // location of font definition files

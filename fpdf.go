@@ -92,6 +92,7 @@ func fpdfNew(orientationStr, unitStr, sizeStr, fontDirStr string, size SizeType)
 	f.colorFlag = false
 	f.ws = 0
 	f.fontpath = fontDirStr
+	f.clock = &RealClock{}
 	// Core fonts
 	f.coreFonts = map[string]bool{
 		"courier":      true,
@@ -242,6 +243,12 @@ func (f *Fpdf) SetErrorf(fmtStr string, args ...interface{}) {
 	if f.err == nil {
 		f.err = fmt.Errorf(fmtStr, args...)
 	}
+}
+
+// Clock returns the clock implementation of the PDF. It can be used to set a
+// creation date.
+func (f *Fpdf) Clock() Clock {
+	return f.clock
 }
 
 // String satisfies the fmt.Stringer interface and summarizes the Fpdf
