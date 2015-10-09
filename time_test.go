@@ -10,11 +10,11 @@ import (
 func TestNow(t *testing.T) {
 	clock := &gofpdf.RealClock{}
 
-	formatTime := func(t time.Time) string {
+	format := func(t time.Time) string {
 		return t.Format(time.RFC3339)
 	}
 
-	if formatTime(clock.Now()) != formatTime(time.Now()) {
+	if format(clock.Now()) != format(time.Now()) {
 		t.Errorf("Current time does not equal clock current time")
 		t.FailNow()
 	}
@@ -22,14 +22,14 @@ func TestNow(t *testing.T) {
 	frozenTime := time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC)
 	clock.Freeze(frozenTime)
 
-	if formatTime(clock.Now()) != formatTime(frozenTime) {
+	if format(clock.Now()) != format(frozenTime) {
 		t.Errorf("frozenTime time does not equal clock frozen time")
 		t.FailNow()
 	}
 
 	clock.Unfreeze()
 
-	if formatTime(clock.Now()) != formatTime(time.Now()) {
+	if format(clock.Now()) != format(time.Now()) {
 		t.Errorf("Current time does not equal clock current time")
 		t.FailNow()
 	}
