@@ -102,6 +102,9 @@ type HTMLBasicType struct {
 		ClrR, ClrG, ClrB         int
 		Bold, Italic, Underscore bool
 	}
+	Font struct {
+		boldLvl, italicLvl, underscoreLvl int
+	}
 }
 
 // HTMLBasicNew returns an instance that facilitates writing basic HTML in the
@@ -111,6 +114,22 @@ func (f *Fpdf) HTMLBasicNew() (html HTMLBasicType) {
 	html.Link.ClrR, html.Link.ClrG, html.Link.ClrB = 0, 0, 128
 	html.Link.Bold, html.Link.Italic, html.Link.Underscore = false, false, true
 	return
+}
+
+// GetStringWidth returns the length of a string in user units. A font must be
+// currently selected.
+func (html *HTMLBasicType) GetStringWidth(s string) float64 {
+	if html.pdf.err != nil {
+		return 0
+	}
+	w := 0
+	for _, ch := range []byte(s) {
+		if ch == 0 {
+			break
+		}
+		w += html.pdf.currentFont.Cw[ch]
+	}
+	return float64(w) * html.pdf.fontSize / 1000
 }
 
 // Write prints text from the current position using the currently selected
@@ -123,42 +142,7 @@ func (f *Fpdf) HTMLBasicNew() (html HTMLBasicType) {
 //
 // lineHt indicates the line height in the unit of measure specified in New().
 func (html *HTMLBasicType) Write(lineHt float64, htmlStr string) {
-	var boldLvl, italicLvl, underscoreLvl, linkBold, linkItalic, linkUnderscore int
-	var textR, textG, textB = html.pdf.GetTextColor()
 	var hrefStr string
-	if html.Link.Bold {
-		linkBold = 1
-	}
-	if html.Link.Italic {
-		linkItalic = 1
-	}
-	if html.Link.Underscore {
-		linkUnderscore = 1
-	}
-	setStyle := func(boldAdj, italicAdj, underscoreAdj int) {
-		styleStr := ""
-		boldLvl += boldAdj
-		if boldLvl > 0 {
-			styleStr += "B"
-		}
-		italicLvl += italicAdj
-		if italicLvl > 0 {
-			styleStr += "I"
-		}
-		underscoreLvl += underscoreAdj
-		if underscoreLvl > 0 {
-			styleStr += "U"
-		}
-		html.pdf.SetFont("", styleStr, 0)
-	}
-	putLink := func(urlStr, txtStr string) {
-		// Put a hyperlink
-		html.pdf.SetTextColor(html.Link.ClrR, html.Link.ClrG, html.Link.ClrB)
-		setStyle(linkBold, linkItalic, linkUnderscore)
-		html.pdf.WriteLinkString(lineHt, txtStr, urlStr)
-		setStyle(-linkBold, -linkItalic, -linkUnderscore)
-		html.pdf.SetTextColor(textR, textG, textB)
-	}
 	list := HTMLBasicTokenize(htmlStr)
 	var ok bool
 	alignStr := "L"
@@ -166,7 +150,7 @@ func (html *HTMLBasicType) Write(lineHt float64, htmlStr string) {
 		switch el.Cat {
 		case 'T':
 			if len(hrefStr) > 0 {
-				putLink(hrefStr, el.Str)
+				html.putLink(lineHt, hrefStr, el.Str)
 				hrefStr = ""
 			} else {
 				if alignStr == "C" {
@@ -178,11 +162,11 @@ func (html *HTMLBasicType) Write(lineHt float64, htmlStr string) {
 		case 'O':
 			switch el.Str {
 			case "b":
-				setStyle(1, 0, 0)
+				html.setStyle(1, 0, 0)
 			case "i":
-				setStyle(0, 1, 0)
+				html.setStyle(0, 1, 0)
 			case "u":
-				setStyle(0, 0, 1)
+				html.setStyle(0, 0, 1)
 			case "br":
 				html.pdf.Ln(lineHt)
 			case "center":
@@ -197,15 +181,58 @@ func (html *HTMLBasicType) Write(lineHt float64, htmlStr string) {
 		case 'C':
 			switch el.Str {
 			case "b":
-				setStyle(-1, 0, 0)
+				html.setStyle(-1, 0, 0)
 			case "i":
-				setStyle(0, -1, 0)
+				html.setStyle(0, -1, 0)
 			case "u":
-				setStyle(0, 0, -1)
+				html.setStyle(0, 0, -1)
 			case "center":
 				html.pdf.Ln(lineHt)
 				alignStr = "L"
 			}
 		}
 	}
+}
+
+// setStyle will update the current style of the document. If an integer value
+// below 0 is passed, it will remove that style from the font. If 0 is given, it
+// will keep the current selected style. If the value is above 0 it will force
+// that style on the document.
+func (html *HTMLBasicType) setStyle(boldAdj, italicAdj, underscoreAdj int) {
+	styleStr := ""
+	html.Font.boldLvl += boldAdj
+	if html.Font.boldLvl > 0 {
+		styleStr += "B"
+	}
+	html.Font.italicLvl += italicAdj
+	if html.Font.italicLvl > 0 {
+		styleStr += "I"
+	}
+	html.Font.underscoreLvl += underscoreAdj
+	if html.Font.underscoreLvl > 0 {
+		styleStr += "U"
+	}
+	html.pdf.SetFont("", styleStr, 0)
+}
+
+// putLink will put a link on the page with the previously set font options.
+func (html *HTMLBasicType) putLink(lineHt float64, urlStr, txtStr string) {
+	var linkBold, linkItalic, linkUnderscore int
+	var textR, textG, textB = html.pdf.GetTextColor()
+	if html.Link.Bold {
+		linkBold = 1
+	}
+	if html.Link.Italic {
+		linkItalic = 1
+	}
+	if html.Link.Underscore {
+		linkUnderscore = 1
+	}
+
+	// Put a hyperlink
+	html.pdf.SetTextColor(html.Link.ClrR, html.Link.ClrG, html.Link.ClrB)
+	html.setStyle(linkBold, linkItalic, linkUnderscore)
+	html.pdf.WriteLinkString(lineHt, txtStr, urlStr)
+	html.setStyle(-linkBold, -linkItalic, -linkUnderscore)
+	html.pdf.SetTextColor(textR, textG, textB)
 }
